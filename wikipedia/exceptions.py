@@ -63,8 +63,9 @@ class DisambiguationError(WikipediaException):
 class RedirectError(WikipediaException):
   """Exception raised when a page title unexpectedly resolves to a redirect."""
 
-  def __init__(self, title):
+  def __init__(self, title, redirect):
     self.title = title
+    self.redirect=redirect
 
   def __unicode__(self):
     return u"\"{0}\" resulted in a redirect. Set the redirect property to True to allow automatic redirects.".format(self.title)

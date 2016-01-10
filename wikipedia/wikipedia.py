@@ -16,7 +16,7 @@ API_URL = 'http://en.wikipedia.org/w/api.php'
 RATE_LIMIT = False
 RATE_LIMIT_MIN_WAIT = None
 RATE_LIMIT_LAST_CALL = None
-USER_AGENT = 'wikipedia (https://github.com/goldsmith/Wikipedia/)'
+USER_AGENT = 'wikipedia (https://github.com/h4ck3rm1k3/Wikipedia/) please email jamesmikedupont@gmail.com for issues'
 
 
 def set_lang(prefix):
@@ -367,7 +367,10 @@ class WikipediaPage(object):
         self.__init__(redirects['to'], redirect=redirect, preload=preload)
 
       else:
-        raise RedirectError(getattr(self, 'title', page['title']))
+        redirects = query['redirects'][0]
+        d = redirects['to']
+        a = getattr(self, 'title', page['title'])
+        raise RedirectError(a,d)
 
     # since we only asked for disambiguation in ppprop,
     # if a pageprop is returned,
@@ -420,8 +423,10 @@ class WikipediaPage(object):
         for datum in pages.values():  # in python 3.3+: "yield from pages.values()"
           yield datum
       else:
-        for datum in pages[self.pageid][prop]:
-          yield datum
+        page = pages[self.pageid]
+        if prop in page:
+          for datum in pages[self.pageid][prop]:
+            yield datum
 
       if 'continue' not in request:
         break
@@ -539,16 +544,21 @@ class WikipediaPage(object):
     '''
 
     if not getattr(self, '_images', False):
-      self._images = [
-        page['imageinfo'][0]['url']
-        for page in self.__continued_query({
-          'generator': 'images',
-          'gimlimit': 'max',
-          'prop': 'imageinfo',
-          'iiprop': 'url',
-        })
-        if 'imageinfo' in page
-      ]
+
+      # res = self.__continued_query(
+      #         {
+      #           'generator': 'images',
+      #           'gimlimit': 'max',
+      #           'prop': 'imageinfo',
+      #           'iiprop': 'url',
+      #         })
+      self._images= []
+      # for page in res:
+      #   if 'imageinfo' in page:
+      #     a = page['imageinfo'][0]
+      #     if 'url' in a:
+      #       aurl = a['url']
+      #       self._images.append(aurl)
 
     return self._images
 
@@ -734,7 +744,7 @@ def _wiki_request(params):
     wait_time = (RATE_LIMIT_LAST_CALL + RATE_LIMIT_MIN_WAIT) - datetime.now()
     time.sleep(int(wait_time.total_seconds()))
 
-  r = requests.get(API_URL, params=params, headers=headers)
+  r = requests.get(API_URL, params=params, headers=headers, timeout=3)
 
   if RATE_LIMIT:
     RATE_LIMIT_LAST_CALL = datetime.now()
